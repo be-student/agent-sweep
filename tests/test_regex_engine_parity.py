@@ -12,6 +12,7 @@ from test_ported_rules import FIXTURES
 
 
 def _core_fixtures() -> dict[str, str]:
+    """Build synthetic core-rule examples shared by the regex-engine parity checks."""
     return {
         "aws-access-key": "AKIAIOSFODNN7EXAMPLE",
         "aws-session-token": "ASIA" + "IOSFODNN7EXAMPLE",

@@ -13,12 +13,14 @@ from agentsweep.scanner import ROTATION_GUIDANCE, scan_text  # noqa: E402
 
 
 def _token(body: str | None = None, version: str = "01") -> str:
+    """Build a synthetic OAuth token with configurable version and body length."""
     if body is None:
         body = "A" * 40 + "-" + "b" * 32
     return "sk-ant-" + f"oat{version}-" + body
 
 
 def test_detects_anthropic_oauth_token_and_includes_rotation_guidance():
+    """Detect the OAuth credential and provide the matching reauthentication guidance."""
     token = _token()
     findings = scan_text(token)
 
@@ -28,6 +30,7 @@ def test_detects_anthropic_oauth_token_and_includes_rotation_guidance():
 
 
 def test_anthropic_oauth_token_body_length_is_bounded():
+    """Accept boundary lengths while rejecting bodies just outside the allowed range."""
     assert scan_text(_token("a" * 64))
     assert scan_text(_token("a" * 256))
     assert scan_text(_token("a" * 63)) == []
@@ -36,6 +39,7 @@ def test_anthropic_oauth_token_body_length_is_bounded():
 
 @pytest.mark.parametrize("version", ["1", "001", "ab"])
 def test_anthropic_oauth_token_requires_two_digit_version(version: str):
+    """Reject token versions that do not contain exactly two decimal digits."""
     assert scan_text(_token(version=version)) == []
 
 
@@ -51,4 +55,5 @@ def test_anthropic_oauth_token_requires_two_digit_version(version: str):
     ],
 )
 def test_anthropic_oauth_token_rejects_word_and_dash_embeds(embedded: str):
+    """Avoid extracting a token from a larger identifier or dash-delimited value."""
     assert scan_text(embedded) == []
