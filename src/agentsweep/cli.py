@@ -335,6 +335,7 @@ def _add_common(ap: argparse.ArgumentParser) -> None:
 
 
 def _parse_run(verb: str, rest: list[str]) -> argparse.Namespace:
+    """Parse scan or fix options and enforce compatible output-mode selections."""
     from .scanner import DETECTOR_IDS, RULES
 
     ap = argparse.ArgumentParser(

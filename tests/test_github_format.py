@@ -19,6 +19,7 @@ GH_TOKEN = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
 
 @pytest.fixture(autouse=True)
 def _isolate_home(tmp_path, monkeypatch):
+    """Keep source discovery and update checks inside a disposable test home."""
     home = tmp_path / "home"
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
@@ -30,6 +31,7 @@ def _isolate_home(tmp_path, monkeypatch):
 
 
 def _seed(base: Path, *secrets: str) -> Path:
+    """Write aged synthetic history entries into a disposable scan root."""
     root = base / "scan_root"
     root.mkdir(parents=True, exist_ok=True)
     history = root / "session.jsonl"
@@ -47,6 +49,7 @@ def _seed(base: Path, *secrets: str) -> Path:
 
 
 def test_annotation_shape_and_masking(tmp_path, capsys):
+    """Emit one located GitHub annotation per finding without exposing token values."""
     root = _seed(tmp_path, AWS_KEY, GH_TOKEN)
 
     code = main(["scan", "--root", str(root), "--format", "github"])
@@ -66,6 +69,7 @@ def test_annotation_shape_and_masking(tmp_path, capsys):
 
 
 def test_clean_scan_emits_nothing(tmp_path, capsys):
+    """Keep GitHub-mode stdout empty when the scan contains no findings."""
     root = _seed(tmp_path)
 
     code = main(["scan", "--root", str(root), "--format", "github"])
@@ -76,6 +80,7 @@ def test_clean_scan_emits_nothing(tmp_path, capsys):
 
 
 def test_output_file_keeps_stdout_clean(tmp_path, capsys):
+    """Write masked annotations to the requested file instead of stdout."""
     root = _seed(tmp_path, AWS_KEY)
     output = tmp_path / "annotations.txt"
 
@@ -90,6 +95,7 @@ def test_output_file_keeps_stdout_clean(tmp_path, capsys):
 
 @pytest.mark.parametrize("secrets", [(), (AWS_KEY,)])
 def test_output_write_failure_is_user_error(tmp_path, capsys, secrets):
+    """Report annotation write failures as user errors without a success message."""
     root = _seed(tmp_path, *secrets)
     output = tmp_path / "output-directory"
     output.mkdir()
@@ -104,6 +110,7 @@ def test_output_write_failure_is_user_error(tmp_path, capsys, secrets):
 
 
 def test_all_sources_uses_same_annotation_format(_isolate_home, capsys):
+    """Use identical masked annotations during automatic multi-source discovery."""
     root = _isolate_home / ".claude" / "projects"
     root.mkdir(parents=True)
     history = root / "session.jsonl"
@@ -123,6 +130,7 @@ def test_all_sources_uses_same_annotation_format(_isolate_home, capsys):
 
 
 def test_missing_root_is_user_error_with_clean_stdout(tmp_path, capsys):
+    """Reject absent scan roots without corrupting machine-readable stdout."""
     code = main(["scan", "--root", str(tmp_path / "missing"), "--format", "github"])
     captured = capsys.readouterr()
 
@@ -132,6 +140,7 @@ def test_missing_root_is_user_error_with_clean_stdout(tmp_path, capsys):
 
 
 def test_github_format_rejects_json_and_fix(tmp_path):
+    """Reject GitHub annotations combined with JSON output or mutating fix mode."""
     with pytest.raises(SystemExit):
         main(["scan", "--root", str(tmp_path), "--format", "github", "--json"])
     with pytest.raises(SystemExit):

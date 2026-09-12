@@ -81,6 +81,7 @@ def run(
     def _print_empty_machine_output() -> None:
         # stdout must stay parseable in every machine-format run, including
         # user errors — for SARIF that means a valid document, not "[]".
+        """Emit the empty representation required by the selected machine-output mode."""
         if as_sarif:
             print(json.dumps(_sarif_document([]), indent=2))
         elif as_github:
@@ -1312,6 +1313,7 @@ def _stats_payload_multi(
 
 
 def _show_stats(stats: JsonObject) -> None:
+    """Print aggregate finding counts grouped by rule and source for human output."""
     ui.console.print("  Stats", style="bold cyan")
     ui.console.print(f"    total findings: {stats['total_findings']}")
     by_rule = stats["by_rule"]
