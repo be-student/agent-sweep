@@ -17,11 +17,13 @@ from agentsweep.scanner import (  # noqa: E402
 
 
 def _key(kind: str = "pt", body: str = "a" * 36, tail: str = "b" * 10) -> str:
+    """Build a synthetic LangSmith key with independently configurable segments."""
     return "lsv2_" + kind + "_" + body + "_" + tail
 
 
 @pytest.mark.parametrize("kind", ["pt", "sk"])
 def test_detects_langsmith_personal_and_service_keys(kind: str) -> None:
+    """Recognize both key families and include provider-specific rotation guidance."""
     findings = scan_text(_key(kind))
 
     assert [finding.rule for finding in findings] == ["langsmith-api-key"]
@@ -29,6 +31,7 @@ def test_detects_langsmith_personal_and_service_keys(kind: str) -> None:
 
 
 def test_detects_single_segment_128_character_key_from_issue() -> None:
+    """Retain detection of the long single-segment personal-token format."""
     key = "lsv2_" + "pt_" + "0123456789abcdef" * 8
 
     assert [finding.rule for finding in scan_text(key)] == ["langsmith-api-key"]
@@ -48,8 +51,10 @@ def test_detects_single_segment_128_character_key_from_issue() -> None:
 def test_langsmith_key_rejects_invalid_or_out_of_bounds_values(
     near_miss: str,
 ) -> None:
+    """Reject malformed prefixes, segments, lengths, and embedded near matches."""
     assert scan_text(near_miss) == []
 
 
 def test_langsmith_prefilter_uses_shared_prefix() -> None:
+    """Ensure the fast prefilter admits both LangSmith key families."""
     assert _PREFILTER["langsmith-api-key"] == ("lsv2_",)
